@@ -11,6 +11,7 @@ type Config struct {
 	Logging  LoggingConfig
 	Database DatabaseConfig
 	Auth     AuthConfig
+	Rate     RateLimitConfig
 }
 
 type ServerConfig struct {
@@ -40,6 +41,10 @@ type AuthConfig struct {
 	JWTTTLSeconds int
 }
 
+type RateLimitConfig struct {
+	RequestsPerMinute int
+}
+
 func Load() Config {
 	return Config{
 		Server: ServerConfig{
@@ -64,6 +69,9 @@ func Load() Config {
 		Auth: AuthConfig{
 			JWTSecret:     Getenv("JWT_SECRET", "dev-secret-change-me"),
 			JWTTTLSeconds: GetenvInt("JWT_TTL_SECONDS", 3600),
+		},
+		Rate: RateLimitConfig{
+			RequestsPerMinute: GetenvInt("RATE_LIMIT_PER_MINUTE", 200),
 		},
 	}
 }

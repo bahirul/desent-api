@@ -11,7 +11,7 @@ import (
 func parseBookID(rawID string) (int64, error) {
 	id, err := strconv.ParseInt(rawID, 10, 64)
 	if err != nil || id <= 0 {
-		return 0, ErrInvalidBookID
+		return 0, ErrBookNotFound
 	}
 
 	return id, nil

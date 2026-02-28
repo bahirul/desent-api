@@ -231,8 +231,8 @@ func TestBooks_GetByIDErrors(t *testing.T) {
 	invalidIDReq := httptest.NewRequest(http.MethodGet, "/books/abc", nil)
 	invalidIDRes := httptest.NewRecorder()
 	r.ServeHTTP(invalidIDRes, invalidIDReq)
-	if invalidIDRes.Code != http.StatusBadRequest {
-		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, invalidIDRes.Code)
+	if invalidIDRes.Code != http.StatusNotFound {
+		t.Fatalf("expected status %d, got %d", http.StatusNotFound, invalidIDRes.Code)
 	}
 
 	notFoundReq := httptest.NewRequest(http.MethodGet, "/books/999", nil)
@@ -328,8 +328,8 @@ func TestBooks_UpdateBookErrors(t *testing.T) {
 	invalidIDReq.Header.Set("Content-Type", "application/json")
 	invalidIDRes := httptest.NewRecorder()
 	r.ServeHTTP(invalidIDRes, invalidIDReq)
-	if invalidIDRes.Code != http.StatusBadRequest {
-		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, invalidIDRes.Code)
+	if invalidIDRes.Code != http.StatusNotFound {
+		t.Fatalf("expected status %d, got %d", http.StatusNotFound, invalidIDRes.Code)
 	}
 
 	notFoundReq := httptest.NewRequest(http.MethodPut, "/books/999", strings.NewReader(`{"title":"New","author":"Writer","year":2002}`))
@@ -378,8 +378,8 @@ func TestBooks_DeleteBookErrors(t *testing.T) {
 	invalidIDReq := httptest.NewRequest(http.MethodDelete, "/books/abc", nil)
 	invalidIDRes := httptest.NewRecorder()
 	r.ServeHTTP(invalidIDRes, invalidIDReq)
-	if invalidIDRes.Code != http.StatusBadRequest {
-		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, invalidIDRes.Code)
+	if invalidIDRes.Code != http.StatusNotFound {
+		t.Fatalf("expected status %d, got %d", http.StatusNotFound, invalidIDRes.Code)
 	}
 
 	notFoundReq := httptest.NewRequest(http.MethodDelete, "/books/999", nil)

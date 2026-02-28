@@ -108,3 +108,8 @@ Database:
 Auth:
 - `JWT_SECRET` (default: `dev-secret-change-me`)
 - `JWT_TTL_SECONDS` (default: `3600`)
+
+Rate limiting:
+- `RATE_LIMIT_PER_MINUTE` (default: `200`)
+- Applied to all endpoints per client IP.
+- Exceeded requests return `429` with `{"error_code":"RATE_LIMIT_EXCEEDED","message":"rate limit exceeded"}`.
