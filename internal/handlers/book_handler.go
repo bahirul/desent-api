@@ -49,7 +49,7 @@ func (h *BookHandler) CreateBook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusOK, models.ToBookResponse(book))
+	writeJSON(w, http.StatusCreated, models.ToBookResponse(book))
 }
 
 func (h *BookHandler) ListBooks(w http.ResponseWriter, r *http.Request) {

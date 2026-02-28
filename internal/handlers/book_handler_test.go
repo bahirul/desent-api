@@ -54,11 +54,11 @@ func TestBooks_CreateListGet(t *testing.T) {
 	createRes := httptest.NewRecorder()
 	r.ServeHTTP(createRes, createReq)
 
-	if createRes.Code != http.StatusOK {
-		t.Fatalf("expected status %d, got %d", http.StatusOK, createRes.Code)
+	if createRes.Code != http.StatusCreated {
+		t.Fatalf("expected status %d, got %d", http.StatusCreated, createRes.Code)
 	}
 
-	if got := strings.TrimSpace(createRes.Body.String()); got != `{"title":"Clean Code","author":"Robert C. Martin","year":2008}` {
+	if got := strings.TrimSpace(createRes.Body.String()); got != `{"id":1,"title":"Clean Code","author":"Robert C. Martin","year":2008}` {
 		t.Fatalf("unexpected create response: %s", got)
 	}
 
@@ -70,7 +70,7 @@ func TestBooks_CreateListGet(t *testing.T) {
 		t.Fatalf("expected status %d, got %d", http.StatusOK, listRes.Code)
 	}
 
-	if got := strings.TrimSpace(listRes.Body.String()); got != `[{"title":"Clean Code","author":"Robert C. Martin","year":2008}]` {
+	if got := strings.TrimSpace(listRes.Body.String()); got != `[{"id":1,"title":"Clean Code","author":"Robert C. Martin","year":2008}]` {
 		t.Fatalf("unexpected list response: %s", got)
 	}
 
@@ -82,7 +82,7 @@ func TestBooks_CreateListGet(t *testing.T) {
 		t.Fatalf("expected status %d, got %d", http.StatusOK, getRes.Code)
 	}
 
-	if got := strings.TrimSpace(getRes.Body.String()); got != `{"title":"Clean Code","author":"Robert C. Martin","year":2008}` {
+	if got := strings.TrimSpace(getRes.Body.String()); got != `{"id":1,"title":"Clean Code","author":"Robert C. Martin","year":2008}` {
 		t.Fatalf("unexpected get response: %s", got)
 	}
 }
