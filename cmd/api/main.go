@@ -45,6 +45,8 @@ func main() {
 		usecases.NewCreateBookUsecase(bookRepository),
 		usecases.NewListBooksUsecase(bookRepository),
 		usecases.NewGetBookUsecase(bookRepository),
+		usecases.NewUpdateBookUsecase(bookRepository),
+		usecases.NewDeleteBookUsecase(bookRepository),
 	)
 
 	r := chi.NewRouter()
@@ -58,6 +60,8 @@ func main() {
 	r.Post("/books", bookHandler.CreateBook)
 	r.Get("/books", bookHandler.ListBooks)
 	r.Get("/books/{id}", bookHandler.GetBookByID)
+	r.Put("/books/{id}", bookHandler.UpdateBook)
+	r.Delete("/books/{id}", bookHandler.DeleteBook)
 
 	srv := &http.Server{
 		Addr:              cfg.Server.Address,

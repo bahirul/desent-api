@@ -37,12 +37,16 @@ func setupBooksRouter(t *testing.T) http.Handler {
 		usecases.NewCreateBookUsecase(repo),
 		usecases.NewListBooksUsecase(repo),
 		usecases.NewGetBookUsecase(repo),
+		usecases.NewUpdateBookUsecase(repo),
+		usecases.NewDeleteBookUsecase(repo),
 	)
 
 	r := chi.NewRouter()
 	r.Post("/books", h.CreateBook)
 	r.Get("/books", h.ListBooks)
 	r.Get("/books/{id}", h.GetBookByID)
+	r.Put("/books/{id}", h.UpdateBook)
+	r.Delete("/books/{id}", h.DeleteBook)
 	return r
 }
 
@@ -98,6 +102,100 @@ func TestBooks_GetByIDErrors(t *testing.T) {
 	}
 
 	notFoundReq := httptest.NewRequest(http.MethodGet, "/books/999", nil)
+	notFoundRes := httptest.NewRecorder()
+	r.ServeHTTP(notFoundRes, notFoundReq)
+	if notFoundRes.Code != http.StatusNotFound {
+		t.Fatalf("expected status %d, got %d", http.StatusNotFound, notFoundRes.Code)
+	}
+}
+
+func TestBooks_UpdateBook(t *testing.T) {
+	r := setupBooksRouter(t)
+
+	createReq := httptest.NewRequest(http.MethodPost, "/books", strings.NewReader(`{"title":"Old","author":"Author","year":2001}`))
+	createReq.Header.Set("Content-Type", "application/json")
+	createRes := httptest.NewRecorder()
+	r.ServeHTTP(createRes, createReq)
+	if createRes.Code != http.StatusCreated {
+		t.Fatalf("expected status %d, got %d", http.StatusCreated, createRes.Code)
+	}
+
+	updateReq := httptest.NewRequest(http.MethodPut, "/books/1", strings.NewReader(`{"title":"New","author":"Writer","year":2002}`))
+	updateReq.Header.Set("Content-Type", "application/json")
+	updateRes := httptest.NewRecorder()
+	r.ServeHTTP(updateRes, updateReq)
+
+	if updateRes.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d", http.StatusOK, updateRes.Code)
+	}
+
+	if got := strings.TrimSpace(updateRes.Body.String()); got != `{"id":1,"title":"New","author":"Writer","year":2002}` {
+		t.Fatalf("unexpected update response: %s", got)
+	}
+}
+
+func TestBooks_UpdateBookErrors(t *testing.T) {
+	r := setupBooksRouter(t)
+
+	invalidIDReq := httptest.NewRequest(http.MethodPut, "/books/abc", strings.NewReader(`{"title":"New","author":"Writer","year":2002}`))
+	invalidIDReq.Header.Set("Content-Type", "application/json")
+	invalidIDRes := httptest.NewRecorder()
+	r.ServeHTTP(invalidIDRes, invalidIDReq)
+	if invalidIDRes.Code != http.StatusBadRequest {
+		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, invalidIDRes.Code)
+	}
+
+	notFoundReq := httptest.NewRequest(http.MethodPut, "/books/999", strings.NewReader(`{"title":"New","author":"Writer","year":2002}`))
+	notFoundReq.Header.Set("Content-Type", "application/json")
+	notFoundRes := httptest.NewRecorder()
+	r.ServeHTTP(notFoundRes, notFoundReq)
+	if notFoundRes.Code != http.StatusNotFound {
+		t.Fatalf("expected status %d, got %d", http.StatusNotFound, notFoundRes.Code)
+	}
+}
+
+func TestBooks_DeleteBook(t *testing.T) {
+	r := setupBooksRouter(t)
+
+	createReq := httptest.NewRequest(http.MethodPost, "/books", strings.NewReader(`{"title":"Delete Me","author":"Author","year":2001}`))
+	createReq.Header.Set("Content-Type", "application/json")
+	createRes := httptest.NewRecorder()
+	r.ServeHTTP(createRes, createReq)
+	if createRes.Code != http.StatusCreated {
+		t.Fatalf("expected status %d, got %d", http.StatusCreated, createRes.Code)
+	}
+
+	deleteReq := httptest.NewRequest(http.MethodDelete, "/books/1", nil)
+	deleteRes := httptest.NewRecorder()
+	r.ServeHTTP(deleteRes, deleteReq)
+
+	if deleteRes.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d", http.StatusNoContent, deleteRes.Code)
+	}
+
+	if got := strings.TrimSpace(deleteRes.Body.String()); got != "" {
+		t.Fatalf("expected empty body, got %q", got)
+	}
+
+	getReq := httptest.NewRequest(http.MethodGet, "/books/1", nil)
+	getRes := httptest.NewRecorder()
+	r.ServeHTTP(getRes, getReq)
+	if getRes.Code != http.StatusNotFound {
+		t.Fatalf("expected status %d, got %d", http.StatusNotFound, getRes.Code)
+	}
+}
+
+func TestBooks_DeleteBookErrors(t *testing.T) {
+	r := setupBooksRouter(t)
+
+	invalidIDReq := httptest.NewRequest(http.MethodDelete, "/books/abc", nil)
+	invalidIDRes := httptest.NewRecorder()
+	r.ServeHTTP(invalidIDRes, invalidIDReq)
+	if invalidIDRes.Code != http.StatusBadRequest {
+		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, invalidIDRes.Code)
+	}
+
+	notFoundReq := httptest.NewRequest(http.MethodDelete, "/books/999", nil)
 	notFoundRes := httptest.NewRecorder()
 	r.ServeHTTP(notFoundRes, notFoundReq)
 	if notFoundRes.Code != http.StatusNotFound {

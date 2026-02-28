@@ -14,6 +14,8 @@ type BookRepository interface {
 	Create(ctx context.Context, book models.Book) (models.Book, error)
 	FindAll(ctx context.Context) ([]models.Book, error)
 	FindByID(ctx context.Context, id int64) (models.Book, error)
+	UpdateByID(ctx context.Context, id int64, book models.Book) (models.Book, error)
+	DeleteByID(ctx context.Context, id int64) error
 }
 
 type SQLiteBookRepository struct {
@@ -93,4 +95,48 @@ func (r *SQLiteBookRepository) FindByID(ctx context.Context, id int64) (models.B
 	}
 
 	return book, nil
+}
+
+func (r *SQLiteBookRepository) UpdateByID(ctx context.Context, id int64, book models.Book) (models.Book, error) {
+	result, err := r.db.ExecContext(
+		ctx,
+		`UPDATE books SET title = ?, author = ?, year = ? WHERE id = ?`,
+		book.Title,
+		book.Author,
+		book.Year,
+		id,
+	)
+	if err != nil {
+		return models.Book{}, err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return models.Book{}, err
+	}
+
+	if rowsAffected == 0 {
+		return models.Book{}, ErrBookNotFound
+	}
+
+	book.ID = id
+	return book, nil
+}
+
+func (r *SQLiteBookRepository) DeleteByID(ctx context.Context, id int64) error {
+	result, err := r.db.ExecContext(ctx, `DELETE FROM books WHERE id = ?`, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return ErrBookNotFound
+	}
+
+	return nil
 }

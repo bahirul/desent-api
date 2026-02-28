@@ -16,6 +16,8 @@ type BookHandler struct {
 	createUsecase *usecases.CreateBookUsecase
 	listUsecase   *usecases.ListBooksUsecase
 	getUsecase    *usecases.GetBookUsecase
+	updateUsecase *usecases.UpdateBookUsecase
+	deleteUsecase *usecases.DeleteBookUsecase
 }
 
 type errorResponse struct {
@@ -27,11 +29,15 @@ func NewBookHandler(
 	createUsecase *usecases.CreateBookUsecase,
 	listUsecase *usecases.ListBooksUsecase,
 	getUsecase *usecases.GetBookUsecase,
+	updateUsecase *usecases.UpdateBookUsecase,
+	deleteUsecase *usecases.DeleteBookUsecase,
 ) *BookHandler {
 	return &BookHandler{
 		createUsecase: createUsecase,
 		listUsecase:   listUsecase,
 		getUsecase:    getUsecase,
+		updateUsecase: updateUsecase,
+		deleteUsecase: deleteUsecase,
 	}
 }
 
@@ -78,6 +84,37 @@ func (h *BookHandler) GetBookByID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, models.ToBookResponse(book))
+}
+
+func (h *BookHandler) UpdateBook(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+
+	var req models.CreateBookRequest
+	if err := decodeJSON(r.Body, &req); err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_JSON_BODY", "invalid JSON body")
+		return
+	}
+
+	book, err := h.updateUsecase.Execute(r.Context(), id, req)
+	if err != nil {
+		status, code, message := mapBookError(err)
+		writeError(w, status, code, message)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, models.ToBookResponse(book))
+}
+
+func (h *BookHandler) DeleteBook(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+
+	if err := h.deleteUsecase.Execute(r.Context(), id); err != nil {
+		status, code, message := mapBookError(err)
+		writeError(w, status, code, message)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func decodeJSON(body io.Reader, target any) error {
