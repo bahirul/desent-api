@@ -69,9 +69,22 @@ curl http://127.0.0.1:18080/ping
 
 - `GET /ping` -> `{"success":true}`
 - `POST /echo` -> echoes the exact JSON body
+- `POST /auth/token` -> returns JWT token for `{ "username":"admin", "password":"password" }`
 - `POST /books` -> creates a book
-- `GET /books` -> returns all books (no pagination yet)
+- `GET /books` -> returns all books (requires `Authorization: Bearer <token>`)
 - `GET /books/:id` -> returns one book
+- `PUT /books/:id` -> updates one book
+- `DELETE /books/:id` -> deletes one book
+
+Auth example:
+
+```bash
+TOKEN=$(curl -sS -X POST http://127.0.0.1:18080/auth/token \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"admin","password":"password"}' | jq -r .token)
+
+curl -sS http://127.0.0.1:18080/books -H "Authorization: Bearer $TOKEN"
+```
 
 ## Environment Variables
 
@@ -91,3 +104,7 @@ Logging:
 Database:
 - `DB_DRIVER` (default: `sqlite`)
 - `DB_DSN` (default: `file:/tmp/books.db`)
+
+Auth:
+- `JWT_SECRET` (default: `dev-secret-change-me`)
+- `JWT_TTL_SECONDS` (default: `3600`)

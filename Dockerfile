@@ -21,6 +21,8 @@ ENV HTTP_ADDR=:8080
 ENV LOGS_DIR=/app/logs
 ENV DB_DRIVER=sqlite
 ENV DB_DSN=file:/tmp/books.db
+ENV JWT_SECRET=dev-secret-change-me
+ENV JWT_TTL_SECONDS=3600
 EXPOSE 8080
 
 USER app

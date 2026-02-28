@@ -3,11 +3,14 @@ package handlers
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
+	"desent-api/internal/middlewares"
 	"desent-api/internal/repositories"
 	"desent-api/internal/usecases"
 
@@ -40,14 +43,40 @@ func setupBooksRouter(t *testing.T) http.Handler {
 		usecases.NewUpdateBookUsecase(repo),
 		usecases.NewDeleteBookUsecase(repo),
 	)
+	authHandler := NewAuthHandler("test-secret", time.Hour)
 
 	r := chi.NewRouter()
+	r.Post("/auth/token", authHandler.CreateToken)
 	r.Post("/books", h.CreateBook)
-	r.Get("/books", h.ListBooks)
+	r.With(middlewares.RequireBearerAuth("test-secret")).Get("/books", h.ListBooks)
 	r.Get("/books/{id}", h.GetBookByID)
 	r.Put("/books/{id}", h.UpdateBook)
 	r.Delete("/books/{id}", h.DeleteBook)
 	return r
+}
+
+func getTestToken(t *testing.T, r http.Handler) string {
+	t.Helper()
+
+	req := httptest.NewRequest(http.MethodPost, "/auth/token", strings.NewReader(`{"username":"admin","password":"password"}`))
+	req.Header.Set("Content-Type", "application/json")
+	res := httptest.NewRecorder()
+	r.ServeHTTP(res, req)
+	if res.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d", http.StatusOK, res.Code)
+	}
+
+	var payload map[string]string
+	if err := json.Unmarshal(res.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("unmarshal token response: %v", err)
+	}
+
+	token := payload["token"]
+	if token == "" {
+		t.Fatalf("expected token in response, got %s", res.Body.String())
+	}
+
+	return token
 }
 
 func TestBooks_CreateListGet(t *testing.T) {
@@ -67,6 +96,7 @@ func TestBooks_CreateListGet(t *testing.T) {
 	}
 
 	listReq := httptest.NewRequest(http.MethodGet, "/books", nil)
+	listReq.Header.Set("Authorization", "Bearer "+getTestToken(t, r))
 	listRes := httptest.NewRecorder()
 	r.ServeHTTP(listRes, listReq)
 
@@ -88,6 +118,18 @@ func TestBooks_CreateListGet(t *testing.T) {
 
 	if got := strings.TrimSpace(getRes.Body.String()); got != `{"id":1,"title":"Clean Code","author":"Robert C. Martin","year":2008}` {
 		t.Fatalf("unexpected get response: %s", got)
+	}
+}
+
+func TestBooks_ListUnauthorized(t *testing.T) {
+	r := setupBooksRouter(t)
+
+	req := httptest.NewRequest(http.MethodGet, "/books", nil)
+	res := httptest.NewRecorder()
+	r.ServeHTTP(res, req)
+
+	if res.Code != http.StatusUnauthorized {
+		t.Fatalf("expected status %d, got %d", http.StatusUnauthorized, res.Code)
 	}
 }
 

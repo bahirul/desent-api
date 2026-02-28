@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"desent-api/configs"
 	"desent-api/internal/handlers"
@@ -48,6 +49,7 @@ func main() {
 		usecases.NewUpdateBookUsecase(bookRepository),
 		usecases.NewDeleteBookUsecase(bookRepository),
 	)
+	authHandler := handlers.NewAuthHandler(cfg.Auth.JWTSecret, time.Duration(cfg.Auth.JWTTTLSeconds)*time.Second)
 
 	r := chi.NewRouter()
 	r.Use(chiMiddleware.RequestID)
@@ -57,8 +59,9 @@ func main() {
 
 	r.Get("/ping", handlers.Ping)
 	r.Post("/echo", handlers.Echo)
+	r.Post("/auth/token", authHandler.CreateToken)
 	r.Post("/books", bookHandler.CreateBook)
-	r.Get("/books", bookHandler.ListBooks)
+	r.With(middlewares.RequireBearerAuth(cfg.Auth.JWTSecret)).Get("/books", bookHandler.ListBooks)
 	r.Get("/books/{id}", bookHandler.GetBookByID)
 	r.Put("/books/{id}", bookHandler.UpdateBook)
 	r.Delete("/books/{id}", bookHandler.DeleteBook)

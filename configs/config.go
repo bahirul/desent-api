@@ -10,6 +10,7 @@ type Config struct {
 	Server   ServerConfig
 	Logging  LoggingConfig
 	Database DatabaseConfig
+	Auth     AuthConfig
 }
 
 type ServerConfig struct {
@@ -34,6 +35,11 @@ type DatabaseConfig struct {
 	DSN    string
 }
 
+type AuthConfig struct {
+	JWTSecret     string
+	JWTTTLSeconds int
+}
+
 func Load() Config {
 	return Config{
 		Server: ServerConfig{
@@ -54,6 +60,10 @@ func Load() Config {
 		Database: DatabaseConfig{
 			Driver: Getenv("DB_DRIVER", "sqlite"),
 			DSN:    Getenv("DB_DSN", "file:/tmp/books.db"),
+		},
+		Auth: AuthConfig{
+			JWTSecret:     Getenv("JWT_SECRET", "dev-secret-change-me"),
+			JWTTTLSeconds: GetenvInt("JWT_TTL_SECONDS", 3600),
 		},
 	}
 }
