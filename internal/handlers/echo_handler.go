@@ -2,12 +2,18 @@ package handlers
 
 import (
 	"encoding/json"
+	"io"
 	"net/http"
 )
 
 func Echo(w http.ResponseWriter, r *http.Request) {
-	var payload any
-	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+
+	if !json.Valid(body) {
 		http.Error(w, "invalid JSON body", http.StatusBadRequest)
 		return
 	}
@@ -15,7 +21,7 @@ func Echo(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
-	if err := json.NewEncoder(w).Encode(payload); err != nil {
+	if _, err := w.Write(body); err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
 }
