@@ -5,6 +5,8 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"strconv"
+	"strings"
 
 	"desent-api/internal/models"
 	"desent-api/internal/usecases"
@@ -59,7 +61,13 @@ func (h *BookHandler) CreateBook(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *BookHandler) ListBooks(w http.ResponseWriter, r *http.Request) {
-	books, err := h.listUsecase.Execute(r.Context())
+	query, err := parseBookListQuery(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_QUERY", err.Error())
+		return
+	}
+
+	books, err := h.listUsecase.Execute(r.Context(), query)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "internal server error")
 		return
@@ -71,6 +79,46 @@ func (h *BookHandler) ListBooks(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, response)
+}
+
+func parseBookListQuery(r *http.Request) (models.BookListQuery, error) {
+	values := r.URL.Query()
+
+	query := models.BookListQuery{
+		Author: strings.TrimSpace(values.Get("author")),
+	}
+
+	pageRaw := strings.TrimSpace(values.Get("page"))
+	limitRaw := strings.TrimSpace(values.Get("limit"))
+
+	if pageRaw == "" && limitRaw == "" {
+		return query, nil
+	}
+
+	if pageRaw == "" {
+		query.Page = 1
+	} else {
+		page, err := strconv.Atoi(pageRaw)
+		if err != nil || page <= 0 {
+			return models.BookListQuery{}, errors.New("page must be a positive integer")
+		}
+		query.Page = page
+	}
+
+	if limitRaw == "" {
+		query.Limit = 10
+	} else {
+		limit, err := strconv.Atoi(limitRaw)
+		if err != nil || limit <= 0 {
+			return models.BookListQuery{}, errors.New("limit must be a positive integer")
+		}
+		if limit > 100 {
+			return models.BookListQuery{}, errors.New("limit must be less than or equal to 100")
+		}
+		query.Limit = limit
+	}
+
+	return query, nil
 }
 
 func (h *BookHandler) GetBookByID(w http.ResponseWriter, r *http.Request) {

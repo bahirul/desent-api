@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"strings"
 
 	"desent-api/internal/models"
 )
@@ -12,7 +13,7 @@ var ErrBookNotFound = errors.New("book not found")
 
 type BookRepository interface {
 	Create(ctx context.Context, book models.Book) (models.Book, error)
-	FindAll(ctx context.Context) ([]models.Book, error)
+	FindAll(ctx context.Context, query models.BookListQuery) ([]models.Book, error)
 	FindByID(ctx context.Context, id int64) (models.Book, error)
 	UpdateByID(ctx context.Context, id int64, book models.Book) (models.Book, error)
 	DeleteByID(ctx context.Context, id int64) error
@@ -54,8 +55,25 @@ func (r *SQLiteBookRepository) Create(ctx context.Context, book models.Book) (mo
 	return book, nil
 }
 
-func (r *SQLiteBookRepository) FindAll(ctx context.Context) ([]models.Book, error) {
-	rows, err := r.db.QueryContext(ctx, `SELECT id, title, author, year FROM books ORDER BY id ASC`)
+func (r *SQLiteBookRepository) FindAll(ctx context.Context, query models.BookListQuery) ([]models.Book, error) {
+	statement := strings.Builder{}
+	statement.WriteString(`SELECT id, title, author, year FROM books`)
+
+	args := make([]any, 0, 3)
+	if query.Author != "" {
+		statement.WriteString(` WHERE author = ?`)
+		args = append(args, query.Author)
+	}
+
+	statement.WriteString(` ORDER BY id ASC`)
+
+	if query.Page > 0 && query.Limit > 0 {
+		offset := (query.Page - 1) * query.Limit
+		statement.WriteString(` LIMIT ? OFFSET ?`)
+		args = append(args, query.Limit, offset)
+	}
+
+	rows, err := r.db.QueryContext(ctx, statement.String(), args...)
 	if err != nil {
 		return nil, err
 	}

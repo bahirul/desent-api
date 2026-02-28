@@ -15,6 +15,6 @@ func NewListBooksUsecase(repo repositories.BookRepository) *ListBooksUsecase {
 	return &ListBooksUsecase{repo: repo}
 }
 
-func (u *ListBooksUsecase) Execute(ctx context.Context) ([]models.Book, error) {
-	return u.repo.FindAll(ctx)
+func (u *ListBooksUsecase) Execute(ctx context.Context, query models.BookListQuery) ([]models.Book, error) {
+	return u.repo.FindAll(ctx, query)
 }

@@ -133,6 +133,98 @@ func TestBooks_ListUnauthorized(t *testing.T) {
 	}
 }
 
+func TestBooks_ListFilterByAuthor(t *testing.T) {
+	r := setupBooksRouter(t)
+	token := getTestToken(t, r)
+
+	for _, payload := range []string{
+		`{"title":"Dune","author":"Frank Herbert","year":1965}`,
+		`{"title":"Foundation","author":"Isaac Asimov","year":1951}`,
+		`{"title":"Children of Dune","author":"Frank Herbert","year":1976}`,
+	} {
+		req := httptest.NewRequest(http.MethodPost, "/books", strings.NewReader(payload))
+		req.Header.Set("Content-Type", "application/json")
+		res := httptest.NewRecorder()
+		r.ServeHTTP(res, req)
+		if res.Code != http.StatusCreated {
+			t.Fatalf("expected status %d, got %d", http.StatusCreated, res.Code)
+		}
+	}
+
+	req := httptest.NewRequest(http.MethodGet, "/books?author=Frank%20Herbert", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	res := httptest.NewRecorder()
+	r.ServeHTTP(res, req)
+
+	if res.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d", http.StatusOK, res.Code)
+	}
+
+	got := strings.TrimSpace(res.Body.String())
+	expected := `[{"id":1,"title":"Dune","author":"Frank Herbert","year":1965},{"id":3,"title":"Children of Dune","author":"Frank Herbert","year":1976}]`
+	if got != expected {
+		t.Fatalf("unexpected filtered list response: %s", got)
+	}
+}
+
+func TestBooks_ListPagination(t *testing.T) {
+	r := setupBooksRouter(t)
+	token := getTestToken(t, r)
+
+	for _, payload := range []string{
+		`{"title":"Book 1","author":"A","year":2001}`,
+		`{"title":"Book 2","author":"A","year":2002}`,
+		`{"title":"Book 3","author":"A","year":2003}`,
+		`{"title":"Book 4","author":"A","year":2004}`,
+	} {
+		req := httptest.NewRequest(http.MethodPost, "/books", strings.NewReader(payload))
+		req.Header.Set("Content-Type", "application/json")
+		res := httptest.NewRecorder()
+		r.ServeHTTP(res, req)
+		if res.Code != http.StatusCreated {
+			t.Fatalf("expected status %d, got %d", http.StatusCreated, res.Code)
+		}
+	}
+
+	req := httptest.NewRequest(http.MethodGet, "/books?page=1&limit=2", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	res := httptest.NewRecorder()
+	r.ServeHTTP(res, req)
+
+	if res.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d", http.StatusOK, res.Code)
+	}
+
+	got := strings.TrimSpace(res.Body.String())
+	expected := `[{"id":1,"title":"Book 1","author":"A","year":2001},{"id":2,"title":"Book 2","author":"A","year":2002}]`
+	if got != expected {
+		t.Fatalf("unexpected paginated list response: %s", got)
+	}
+}
+
+func TestBooks_ListInvalidPaginationQuery(t *testing.T) {
+	r := setupBooksRouter(t)
+	token := getTestToken(t, r)
+
+	req := httptest.NewRequest(http.MethodGet, "/books?page=0&limit=2", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	res := httptest.NewRecorder()
+	r.ServeHTTP(res, req)
+
+	if res.Code != http.StatusBadRequest {
+		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, res.Code)
+	}
+
+	reqTooLarge := httptest.NewRequest(http.MethodGet, "/books?page=1&limit=101", nil)
+	reqTooLarge.Header.Set("Authorization", "Bearer "+token)
+	resTooLarge := httptest.NewRecorder()
+	r.ServeHTTP(resTooLarge, reqTooLarge)
+
+	if resTooLarge.Code != http.StatusBadRequest {
+		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, resTooLarge.Code)
+	}
+}
+
 func TestBooks_GetByIDErrors(t *testing.T) {
 	r := setupBooksRouter(t)
 

@@ -7,6 +7,12 @@ type Book struct {
 	Year   int
 }
 
+type BookListQuery struct {
+	Author string
+	Page   int
+	Limit  int
+}
+
 type CreateBookRequest struct {
 	Title  string `json:"title"`
 	Author string `json:"author"`
