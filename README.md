@@ -1,6 +1,6 @@
 # desent-api
 
-Go API service scaffold using `chi`, environment-driven config, structured logging, and Air hot reload for local development.
+Go API service scaffold for the desent.io coding quest (interview test), using `chi`, environment-driven config, structured logging, and Air hot reload for local development.
 
 ## Prerequisites
 
@@ -35,6 +35,26 @@ make test-cover
 make vet
 make fmt
 make tidy
+```
+
+## Docker
+
+Build image:
+
+```bash
+docker build -t desent-api:local .
+```
+
+Run container:
+
+```bash
+docker run --rm -p 8080:8080 --env-file .env.example desent-api:local
+```
+
+Quick check:
+
+```bash
+curl http://127.0.0.1:8080/ping
 ```
 
 ## Endpoint
