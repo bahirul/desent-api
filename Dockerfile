@@ -13,10 +13,12 @@ FROM alpine:3.21
 WORKDIR /app
 
 RUN addgroup -S app && adduser -S app -G app
+RUN mkdir -p /app/logs && chown -R app:app /app
 
 COPY --from=builder /out/api /app/api
 
 ENV HTTP_ADDR=:8080
+ENV LOGS_DIR=/app/logs
 EXPOSE 8080
 
 USER app

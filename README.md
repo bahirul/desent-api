@@ -48,13 +48,13 @@ docker build -t desent-api:local .
 Run container:
 
 ```bash
-docker run --rm -p 8080:8080 --env-file .env.example desent-api:local
+docker run --rm -p 18080:8080 --env-file .env.example desent-api:local
 ```
 
 Quick check:
 
 ```bash
-curl http://127.0.0.1:8080/ping
+curl http://127.0.0.1:18080/ping
 ```
 
 ## Endpoint
