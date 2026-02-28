@@ -1,16 +1,24 @@
 package main
 
 import (
+	"context"
+	"database/sql"
 	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
 
 	"desent-api/configs"
 	"desent-api/internal/handlers"
 	"desent-api/internal/middlewares"
+	"desent-api/internal/repositories"
+	"desent-api/internal/usecases"
 	"desent-api/internal/utils"
 
 	"github.com/go-chi/chi/v5"
 	chiMiddleware "github.com/go-chi/chi/v5/middleware"
+	_ "modernc.org/sqlite"
 )
 
 func main() {
@@ -22,6 +30,23 @@ func main() {
 	}
 	defer loggers.Close()
 
+	db, err := openDatabase(cfg.Database)
+	if err != nil {
+		panic(fmt.Sprintf("open database: %v", err))
+	}
+	defer db.Close()
+
+	if err := repositories.InitBooksSchema(context.Background(), db); err != nil {
+		panic(fmt.Sprintf("init books schema: %v", err))
+	}
+
+	bookRepository := repositories.NewSQLiteBookRepository(db)
+	bookHandler := handlers.NewBookHandler(
+		usecases.NewCreateBookUsecase(bookRepository),
+		usecases.NewListBooksUsecase(bookRepository),
+		usecases.NewGetBookUsecase(bookRepository),
+	)
+
 	r := chi.NewRouter()
 	r.Use(chiMiddleware.RequestID)
 	r.Use(chiMiddleware.RealIP)
@@ -30,6 +55,9 @@ func main() {
 
 	r.Get("/ping", handlers.Ping)
 	r.Post("/echo", handlers.Echo)
+	r.Post("/books", bookHandler.CreateBook)
+	r.Get("/books", bookHandler.ListBooks)
+	r.Get("/books/{id}", bookHandler.GetBookByID)
 
 	srv := &http.Server{
 		Addr:              cfg.Server.Address,
@@ -45,4 +73,33 @@ func main() {
 		loggers.Error.Error("server failed", "error", err.Error())
 		panic(fmt.Sprintf("server failed: %v", err))
 	}
+}
+
+func openDatabase(cfg configs.DatabaseConfig) (*sql.DB, error) {
+	if cfg.Driver == "sqlite" {
+		if err := ensureSQLiteDir(cfg.DSN); err != nil {
+			return nil, err
+		}
+	}
+
+	return sql.Open(cfg.Driver, cfg.DSN)
+}
+
+func ensureSQLiteDir(dsn string) error {
+	if !strings.HasPrefix(dsn, "file:") {
+		return nil
+	}
+
+	filePart := strings.TrimPrefix(dsn, "file:")
+	filePath := strings.SplitN(filePart, "?", 2)[0]
+	if filePath == "" || filePath == ":memory:" {
+		return nil
+	}
+
+	dir := filepath.Dir(filePath)
+	if dir == "." || dir == "" {
+		return nil
+	}
+
+	return os.MkdirAll(dir, 0o755)
 }

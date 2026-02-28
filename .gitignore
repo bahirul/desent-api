@@ -39,3 +39,6 @@ bin/
 # Editor/IDE
 # .idea/
 # .vscode/
+
+# data
+data/

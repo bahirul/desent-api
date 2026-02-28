@@ -7,8 +7,9 @@ import (
 )
 
 type Config struct {
-	Server  ServerConfig
-	Logging LoggingConfig
+	Server   ServerConfig
+	Logging  LoggingConfig
+	Database DatabaseConfig
 }
 
 type ServerConfig struct {
@@ -28,6 +29,11 @@ type LoggingConfig struct {
 	ErrorLogFilePrefix string
 }
 
+type DatabaseConfig struct {
+	Driver string
+	DSN    string
+}
+
 func Load() Config {
 	return Config{
 		Server: ServerConfig{
@@ -44,6 +50,10 @@ func Load() Config {
 			FileEnabled:        GetenvBool("HTTP_LOG_FILE_ENABLED", true),
 			HTTPLogFilePrefix:  "http",
 			ErrorLogFilePrefix: "error",
+		},
+		Database: DatabaseConfig{
+			Driver: Getenv("DB_DRIVER", "sqlite"),
+			DSN:    Getenv("DB_DSN", "file:data/books.db"),
 		},
 	}
 }

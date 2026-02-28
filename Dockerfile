@@ -13,12 +13,14 @@ FROM alpine:3.21
 WORKDIR /app
 
 RUN addgroup -S app && adduser -S app -G app
-RUN mkdir -p /app/logs && chown -R app:app /app
+RUN mkdir -p /app/logs /app/data && chown -R app:app /app
 
 COPY --from=builder /out/api /app/api
 
 ENV HTTP_ADDR=:8080
 ENV LOGS_DIR=/app/logs
+ENV DB_DRIVER=sqlite
+ENV DB_DSN=file:/app/data/books.db
 EXPOSE 8080
 
 USER app

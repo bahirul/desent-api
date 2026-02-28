@@ -48,7 +48,8 @@ docker build -t desent-api:local .
 Run container:
 
 ```bash
-docker run --rm -p 18080:8080 --env-file .env.example desent-api:local
+mkdir -p ./data
+docker run --rm -p 18080:8080 --env-file .env.example -v "$(pwd)/data:/app/data" desent-api:local
 ```
 
 Quick check:
@@ -57,9 +58,13 @@ Quick check:
 curl http://127.0.0.1:18080/ping
 ```
 
-## Endpoint
+## Endpoints
 
 - `GET /ping` -> `{"success":true}`
+- `POST /echo` -> echoes the exact JSON body
+- `POST /books` -> creates a book
+- `GET /books` -> returns all books (no pagination yet)
+- `GET /books/:id` -> returns one book
 
 ## Environment Variables
 
@@ -75,3 +80,7 @@ Logging:
 - `LOG_RETENTION_DAYS` (default: `7`)
 - `HTTP_LOG_CONSOLE_ENABLED` (default: `true`)
 - `HTTP_LOG_FILE_ENABLED` (default: `true`)
+
+Database:
+- `DB_DRIVER` (default: `sqlite`)
+- `DB_DSN` (default: `file:data/books.db`)
