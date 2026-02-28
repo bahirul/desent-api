@@ -29,6 +29,7 @@ func main() {
 	r.Use(middlewares.HTTPLogger(loggers.HTTP))
 
 	r.Get("/ping", handlers.Ping)
+	r.Post("/echo", handlers.Echo)
 
 	srv := &http.Server{
 		Addr:              cfg.Server.Address,
