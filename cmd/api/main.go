@@ -54,9 +54,7 @@ func main() {
 	r := chi.NewRouter()
 	r.Use(chiMiddleware.RequestID)
 	r.Use(chiMiddleware.RealIP)
-	r.Use(middlewares.RateLimitPerIP(cfg.Rate.RequestsPerMinute))
 	r.Use(chiMiddleware.Recoverer)
-	r.Use(middlewares.HTTPLogger(loggers.HTTP))
 
 	r.Get("/ping", handlers.Ping)
 	r.Post("/echo", handlers.Echo)

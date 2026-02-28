@@ -111,5 +111,7 @@ Auth:
 
 Rate limiting:
 - `RATE_LIMIT_PER_MINUTE` (default: `200`)
-- Applied to all endpoints per client IP.
-- Exceeded requests return `429` with `{"error_code":"RATE_LIMIT_EXCEEDED","message":"rate limit exceeded"}`.
+- Currently disabled in router for latency optimization during quest runs.
+
+HTTP request logging:
+- Access-log middleware is currently disabled in router for latency optimization during quest runs.
