@@ -241,6 +241,59 @@ func TestBooks_GetByIDErrors(t *testing.T) {
 	if notFoundRes.Code != http.StatusNotFound {
 		t.Fatalf("expected status %d, got %d", http.StatusNotFound, notFoundRes.Code)
 	}
+
+	if got := strings.TrimSpace(notFoundRes.Body.String()); got != `{"error_code":"BOOK_NOT_FOUND","message":"book not found"}` {
+		t.Fatalf("unexpected not found response: %s", got)
+	}
+}
+
+func TestBooks_CreateValidationErrors(t *testing.T) {
+	r := setupBooksRouter(t)
+
+	tests := []struct {
+		name    string
+		body    string
+		message string
+	}{
+		{
+			name:    "missing title",
+			body:    `{"author":"Author","year":2001}`,
+			message: "validation error: title is required",
+		},
+		{
+			name:    "missing author",
+			body:    `{"title":"Book","year":2001}`,
+			message: "validation error: author is required",
+		},
+		{
+			name:    "missing year",
+			body:    `{"title":"Book","author":"Author"}`,
+			message: "validation error: year must be between 1450 and 2100",
+		},
+		{
+			name:    "empty object",
+			body:    `{}`,
+			message: "validation error: title is required",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodPost, "/books", strings.NewReader(tc.body))
+			req.Header.Set("Content-Type", "application/json")
+			res := httptest.NewRecorder()
+			r.ServeHTTP(res, req)
+
+			if res.Code != http.StatusBadRequest {
+				t.Fatalf("expected status %d, got %d", http.StatusBadRequest, res.Code)
+			}
+
+			expected := `{"error_code":"VALIDATION_ERROR","message":"` + tc.message + `"}`
+			if got := strings.TrimSpace(res.Body.String()); got != expected {
+				t.Fatalf("unexpected validation response: %s", got)
+			}
+		})
+	}
 }
 
 func TestBooks_UpdateBook(t *testing.T) {
