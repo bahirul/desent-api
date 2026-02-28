@@ -20,7 +20,7 @@ COPY --from=builder /out/api /app/api
 ENV HTTP_ADDR=:8080
 ENV LOGS_DIR=/app/logs
 ENV DB_DRIVER=sqlite
-ENV DB_DSN=file:/app/data/books.db
+ENV DB_DSN=file:/tmp/books.db
 EXPOSE 8080
 
 USER app

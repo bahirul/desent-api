@@ -49,7 +49,14 @@ Run container:
 
 ```bash
 mkdir -p ./data
-docker run --rm -p 18080:8080 --env-file .env.example -v "$(pwd)/data:/app/data" desent-api:local
+docker run --rm -p 18080:8080 --env-file .env.example desent-api:local
+```
+
+Run container with persistent DB on host:
+
+```bash
+mkdir -p ./data
+docker run --rm -p 18080:8080 --env-file .env.example -e DB_DSN=file:/app/data/books.db -v "$(pwd)/data:/app/data" desent-api:local
 ```
 
 Quick check:
@@ -83,4 +90,4 @@ Logging:
 
 Database:
 - `DB_DRIVER` (default: `sqlite`)
-- `DB_DSN` (default: `file:data/books.db`)
+- `DB_DSN` (default: `file:/tmp/books.db`)

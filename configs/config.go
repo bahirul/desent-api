@@ -53,7 +53,7 @@ func Load() Config {
 		},
 		Database: DatabaseConfig{
 			Driver: Getenv("DB_DRIVER", "sqlite"),
-			DSN:    Getenv("DB_DSN", "file:data/books.db"),
+			DSN:    Getenv("DB_DSN", "file:/tmp/books.db"),
 		},
 	}
 }
